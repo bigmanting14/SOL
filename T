@@ -360,8 +360,11 @@ Write-ColoredLine "INSTRUCTION: Wait for Process Explorer to open. Scroll to the
 Write-Host ""
 Show-LoadingBar
 
+# Skip processes named loader.exe
 $processNames = @("procexp32", "procexp64", "procexp64a")
-$runningPE = Get-Process -ErrorAction SilentlyContinue | Where-Object { $processNames -contains $_.ProcessName.ToLower() }
+$runningPE = Get-Process -ErrorAction SilentlyContinue | Where-Object { 
+    ($processNames -contains $_.ProcessName.ToLower()) -and ($_.ProcessName.ToLower() -ne "loader")
+}
 
 if ($runningPE) {
     Write-ColoredLine "[SUCCESS] Found and terminated running Process Explorer process(es)." Green
@@ -388,6 +391,11 @@ if (Test-Path $baseFolder) {
     Write-ColoredLine "[SUCCESS] Cleaned up existing C:\ToolsETA folder." Green
     Get-ChildItem -Path $baseFolder -Force -Recurse | ForEach-Object {
         try {
+            # Skip any file or folder named loader.exe
+            if ($_.Name.ToLower() -eq "loader.exe") {
+                return
+            }
+            
             if ($_.Attributes -band [System.IO.FileAttributes]::ReadOnly) {
                 $_.Attributes = $_.Attributes -bxor [System.IO.FileAttributes]::ReadOnly
             }
